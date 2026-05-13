@@ -821,8 +821,8 @@ function loadAdminReservas(){
       var estadoClass='estado-'+r.estado;
       var actions='';
       if(r.estado==='pendiente')actions='<button class="btn btn-success btn-sm" onclick="adminConfirmar(\''+r.id+'\',\''+r.tipo+'\')"><i class="fa-solid fa-check"></i></button> <button class="btn btn-danger btn-sm" onclick="adminCancelar(\''+r.id+'\')"><i class="fa-solid fa-xmark"></i></button>';
-      else if(r.estado==='confirmada'&&r.tipo==='alquiler')actions='<button class="btn btn-secondary btn-sm" onclick="adminDevolver(\''+r.id+'\')"><i class="fa-solid fa-rotate-left"></i> Devolver</button> <button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="reprintTicket(\''+r.id+'\')"><i class="fa-solid fa-print"></i></button>';
-      else if(r.estado==='confirmada')actions='<button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="reprintTicket(\''+r.id+'\')"><i class="fa-solid fa-print"></i></button>';
+      else if(r.estado==='confirmada'&&r.tipo==='alquiler')actions='<button class="btn btn-secondary btn-sm" onclick="adminDevolver(\''+r.id+'\')"><i class="fa-solid fa-rotate-left"></i> Dev</button> <button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="reprintTicket(\''+r.id+'\')"><i class="fa-solid fa-print"></i></button> <button class="btn btn-sm" style="background:#dc2626;color:#fff" onclick="generarPagare(\''+r.id+'\')"><i class="fa-solid fa-file-signature"></i> Pagaré</button>';
+      else if(r.estado==='confirmada')actions='<button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="reprintTicket(\''+r.id+'\')"><i class="fa-solid fa-print"></i></button> <button class="btn btn-sm" style="background:#dc2626;color:#fff" onclick="generarPagare(\''+r.id+'\')"><i class="fa-solid fa-file-signature"></i> Pagaré</button>';
       if(r.estado==='devuelta')actions='<button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="reprintTicket(\''+r.id+'\')"><i class="fa-solid fa-print"></i></button>';
       html+='<tr><td><strong>'+r.id+'</strong></td><td>'+r.cliente+'</td><td>'+r.telefono+'</td><td>'+r.tipo+'</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+prods+'</td><td>$'+fmt(r.total)+'</td><td><span class="estado-badge '+estadoClass+'">'+r.estado+'</span></td><td class="admin-actions">'+actions+'</td></tr>';
     });
@@ -889,6 +889,59 @@ function printTicketReserva(reserva){
   w.document.close();
   setTimeout(function(){w.print()},300);
 }
+function generarPagare(id){
+  var reserva=findReservaById(id);
+  if(!reserva){toast('Reserva no encontrada','error');return}
+  // Pedir DNI del cliente
+  var dni=prompt('DNI/Documento del cliente:','');
+  if(dni===null)return;
+  // Pedir costo de reposición por cada producto
+  var productosConCosto=[];
+  var items=reserva.productos||[];
+  for(var i=0;i<items.length;i++){
+    var costoStr=prompt('Costo de reposición por daño/extravío de "'+items[i].nombre+'" ($):','0');
+    if(costoStr===null)return;
+    productosConCosto.push({nombre:items[i].nombre,cantidad:items[i].cantidad||1,costoReposicion:parseInt(costoStr)||0});
+  }
+  var totalPagare=productosConCosto.reduce(function(s,p){return s+p.costoReposicion},0);
+  printPagare(reserva,dni,productosConCosto,totalPagare);
+}
+
+function printPagare(reserva,dni,productosConCosto,totalPagare){
+  var hoy=new Date().toLocaleDateString('es-AR');
+  var prodsTable=productosConCosto.map(function(p){return'<tr><td>'+p.nombre+'</td><td style="text-align:center">'+p.cantidad+'</td><td style="text-align:right">$'+fmt(p.costoReposicion)+'</td></tr>'}).join('');
+  var w=window.open('','_blank','width=700,height=900');
+  w.document.write('<html><head><title>Pagaré - '+reserva.id+'</title>');
+  w.document.write('<style>body{font-family:Arial,sans-serif;padding:40px;font-size:13px;max-width:650px;margin:0 auto;line-height:1.6}h1{text-align:center;font-size:22px;margin:0 0 4px;text-transform:uppercase}h2{text-align:center;font-size:16px;margin:0 0 20px;color:#555}.header-info{text-align:center;margin-bottom:20px;font-size:11px;color:#666}.section-title{font-weight:bold;font-size:14px;margin:20px 0 8px;padding-bottom:4px;border-bottom:2px solid #333}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{padding:8px;text-align:left;border:1px solid #ddd}th{background:#f5f5f5;font-weight:bold}.total-row{font-weight:bold;font-size:15px;background:#fff3cd}.clausula{background:#f8f9fa;padding:16px;border-radius:6px;margin:16px 0;font-size:11px;line-height:1.7;border:1px solid #dee2e6}.firma-section{margin-top:40px;display:flex;justify-content:space-between}.firma-box{text-align:center;width:45%}.firma-line{border-top:1px solid #333;margin-top:60px;padding-top:6px;font-size:11px}@media print{body{padding:20px}}</style>');
+  w.document.write('</head><body>');
+  w.document.write('<h1>CARHUÉ RENT</h1>');
+  w.document.write('<h2>PAGARÉ / COMPROMISO DE RESPONSABILIDAD</h2>');
+  w.document.write('<div class="header-info">infocarhuerent@gmail.com | Carhué, Buenos Aires</div>');
+  w.document.write('<div class="section-title">DATOS DE LA RESERVA</div>');
+  w.document.write('<table><tr><td><strong>N° Reserva:</strong> '+reserva.id+'</td><td><strong>Fecha:</strong> '+hoy+'</td></tr>');
+  w.document.write('<tr><td><strong>Cliente:</strong> '+reserva.cliente+'</td><td><strong>DNI:</strong> '+(dni||'_______________')+'</td></tr>');
+  w.document.write('<tr><td><strong>Teléfono:</strong> '+reserva.telefono+'</td><td><strong>Email:</strong> '+(reserva.email||'-')+'</td></tr></table>');
+  w.document.write('<div class="section-title">EQUIPOS ALQUILADOS Y VALOR DE REPOSICIÓN</div>');
+  w.document.write('<table><thead><tr><th>Producto</th><th style="text-align:center">Cant.</th><th style="text-align:right">Valor Reposición</th></tr></thead><tbody>'+prodsTable+'</tbody>');
+  w.document.write('<tr class="total-row"><td colspan="2">TOTAL MÁXIMO RESPONSABILIDAD</td><td style="text-align:right">$'+fmt(totalPagare)+'</td></tr></table>');
+  w.document.write('<div class="clausula">');
+  w.document.write('<strong>CLÁUSULA DE RESPONSABILIDAD:</strong><br><br>');
+  w.document.write('Yo, <strong>'+reserva.cliente+'</strong>, DNI N° <strong>'+(dni||'_______________')+'</strong>, en calidad de locatario/a, declaro haber recibido en perfecto estado de conservación y funcionamiento los equipos detallados precedentemente, comprometiéndome a:<br><br>');
+  w.document.write('1. Devolver los equipos en las mismas condiciones en que fueron entregados.<br>');
+  w.document.write('2. Utilizar los equipos de manera responsable y conforme a su uso habitual.<br>');
+  w.document.write('3. Comunicar inmediatamente cualquier desperfecto o inconveniente.<br>');
+  w.document.write('4. En caso de <strong>rotura, extravío o daño</strong> de cualquiera de los equipos, me obligo a abonar el valor de reposición indicado en la tabla precedente.<br>');
+  w.document.write('5. El presente pagaré tiene carácter de declaración jurada y compromiso de pago.<br><br>');
+  w.document.write('<strong>Devolución pactada:</strong> '+(reserva.devolucionFecha||'según acordado')+' a las '+(reserva.devolucionHora||'__:__')+'<br>');
+  w.document.write('<strong>Monto del alquiler:</strong> $'+fmt(reserva.total));
+  w.document.write('</div>');
+  w.document.write('<div class="firma-section"><div class="firma-box"><div class="firma-line">Firma del Cliente</div><p style="font-size:10px;margin-top:4px">'+reserva.cliente+'<br>DNI: '+(dni||'___')+'</p></div><div class="firma-box"><div class="firma-line">Firma Carhué Rent</div><p style="font-size:10px;margin-top:4px">Representante</p></div></div>');
+  w.document.write('<p style="text-align:center;margin-top:30px;font-size:10px;color:#999">Documento generado automáticamente - '+hoy+' - Reserva '+reserva.id+'</p>');
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print()},400);
+}
+
 function adminCancelar(id){if(!confirm('¿Cancelar reserva '+id+'?'))return;callBackend('cancelarReserva',[id],function(r){if(r.success){toast('Cancelada','success');loadAdminData();loadData()}else toast(r.error,'error')})}
 function adminDevolver(id){
   if(!confirm('¿Marcar como devuelta? Se restaurará el stock.'))return;
