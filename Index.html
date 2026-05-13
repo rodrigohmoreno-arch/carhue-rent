@@ -893,51 +893,100 @@ function printTicketReserva(reserva){
 function generarPagare(id){
   var reserva=findReservaById(id);
   if(!reserva){toast('Reserva no encontrada','error');return}
-  // Pedir DNI del cliente
-  var dni=prompt('DNI/Documento del cliente:','');
+  var dni=prompt('DNI/Documento del suscriptor:','');
   if(dni===null)return;
-  // Pedir costo de reposición por cada producto
+  var domicilio=prompt('Domicilio del suscriptor:','');
+  if(domicilio===null)return;
+  // Pedir monto de garantía por cada producto
   var productosConCosto=[];
   var items=reserva.productos||[];
   for(var i=0;i<items.length;i++){
-    var costoStr=prompt('Costo de reposición por daño/extravío de "'+items[i].nombre+'" ($):','0');
+    var costoStr=prompt('Valor de garantía/reposición de "'+items[i].nombre+'" ($):','0');
     if(costoStr===null)return;
     productosConCosto.push({nombre:items[i].nombre,cantidad:items[i].cantidad||1,costoReposicion:parseInt(costoStr)||0});
   }
   var totalPagare=productosConCosto.reduce(function(s,p){return s+p.costoReposicion},0);
-  printPagare(reserva,dni,productosConCosto,totalPagare);
+  printPagare(reserva,dni,domicilio,productosConCosto,totalPagare);
 }
 
-function printPagare(reserva,dni,productosConCosto,totalPagare){
+function numeroALetras(num){
+  var unidades=['','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve'];
+  var decenas=['','diez','veinte','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa'];
+  var especiales=['diez','once','doce','trece','catorce','quince','dieciséis','diecisiete','dieciocho','diecinueve'];
+  var centenas=['','cien','doscientos','trescientos','cuatrocientos','quinientos','seiscientos','setecientos','ochocientos','novecientos'];
+  if(num===0)return'cero';
+  if(num<0)return'menos '+numeroALetras(-num);
+  var resultado='';
+  if(num>=1000000){var mill=Math.floor(num/1000000);resultado+=(mill===1?'un millón':numeroALetras(mill)+' millones');num%=1000000;if(num>0)resultado+=' '}
+  if(num>=1000){var miles=Math.floor(num/1000);resultado+=(miles===1?'mil':numeroALetras(miles)+' mil');num%=1000;if(num>0)resultado+=' '}
+  if(num>=100){if(num===100)resultado+='cien';else{resultado+=centenas[Math.floor(num/100)];num%=100;if(num>0)resultado+=' '}else{num%=100}}
+  if(num>=20){resultado+=decenas[Math.floor(num/10)];var u=num%10;if(u>0)resultado+=' y '+unidades[u];num=0}
+  else if(num>=10){resultado+=especiales[num-10];num=0}
+  else if(num>0){resultado+=unidades[num]}
+  return resultado;
+}
+
+function printPagare(reserva,dni,domicilio,productosConCosto,totalPagare){
   var hoy=new Date().toLocaleDateString('es-AR');
+  var fechaVenc=reserva.devolucionFecha||new Date(Date.now()+86400000).toLocaleDateString('es-AR');
+  var montoLetras=numeroALetras(totalPagare);
   var prodsTable=productosConCosto.map(function(p){return'<tr><td>'+p.nombre+'</td><td style="text-align:center">'+p.cantidad+'</td><td style="text-align:right">$'+fmt(p.costoReposicion)+'</td></tr>'}).join('');
-  var w=window.open('','_blank','width=700,height=900');
+
+  var w=window.open('','_blank','width=700,height=950');
   w.document.write('<html><head><title>Pagaré - '+reserva.id+'</title>');
-  w.document.write('<style>body{font-family:Arial,sans-serif;padding:40px;font-size:13px;max-width:650px;margin:0 auto;line-height:1.6}h1{text-align:center;font-size:22px;margin:0 0 4px;text-transform:uppercase}h2{text-align:center;font-size:16px;margin:0 0 20px;color:#555}.header-info{text-align:center;margin-bottom:20px;font-size:11px;color:#666}.section-title{font-weight:bold;font-size:14px;margin:20px 0 8px;padding-bottom:4px;border-bottom:2px solid #333}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{padding:8px;text-align:left;border:1px solid #ddd}th{background:#f5f5f5;font-weight:bold}.total-row{font-weight:bold;font-size:15px;background:#fff3cd}.clausula{background:#f8f9fa;padding:16px;border-radius:6px;margin:16px 0;font-size:11px;line-height:1.7;border:1px solid #dee2e6}.firma-section{margin-top:40px;display:flex;justify-content:space-between}.firma-box{text-align:center;width:45%}.firma-line{border-top:1px solid #333;margin-top:60px;padding-top:6px;font-size:11px}@media print{body{padding:20px}}</style>');
+  w.document.write('<style>body{font-family:Arial,sans-serif;padding:40px;font-size:13px;max-width:650px;margin:0 auto;line-height:1.7}h1{text-align:center;font-size:28px;margin:0 0 4px;text-transform:uppercase;letter-spacing:3px;border:3px solid #000;padding:10px;font-weight:900}.header-info{text-align:center;margin:10px 0 20px;font-size:11px;color:#666}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{padding:8px;text-align:left;border:1px solid #ddd}th{background:#f5f5f5;font-weight:bold}.total-row{font-weight:bold;font-size:15px;background:#fff3cd}.monto-box{background:#fef3c7;border:2px solid #d97706;padding:14px;border-radius:6px;margin:16px 0;text-align:center}.compromiso{background:#f8f9fa;padding:16px;border-radius:6px;margin:16px 0;font-size:12px;line-height:1.8;border:1px solid #dee2e6}.ejecucion{background:#fef2f2;padding:14px;border-radius:6px;margin:12px 0;font-size:11.5px;line-height:1.7;border:1px solid #fecaca}.firma-section{margin-top:30px;display:flex;justify-content:space-between}.firma-box{text-align:center;width:45%}.firma-line{border-top:1px solid #333;margin-top:60px;padding-top:6px;font-size:11px}.datos-suscriptor{background:#f0f9ff;padding:12px;border-radius:6px;border:1px solid #bae6fd;margin:12px 0}@media print{body{padding:20px}}</style>');
   w.document.write('</head><body>');
-  w.document.write('<h1>CARHUÉ RENT</h1>');
-  w.document.write('<h2>PAGARÉ / COMPROMISO DE RESPONSABILIDAD</h2>');
-  w.document.write('<div class="header-info">infocarhuerent@gmail.com | Carhué, Buenos Aires</div>');
-  w.document.write('<div class="section-title">DATOS DE LA RESERVA</div>');
-  w.document.write('<table><tr><td><strong>N° Reserva:</strong> '+reserva.id+'</td><td><strong>Fecha:</strong> '+hoy+'</td></tr>');
-  w.document.write('<tr><td><strong>Cliente:</strong> '+reserva.cliente+'</td><td><strong>DNI:</strong> '+(dni||'_______________')+'</td></tr>');
-  w.document.write('<tr><td><strong>Teléfono:</strong> '+reserva.telefono+'</td><td><strong>Email:</strong> '+(reserva.email||'-')+'</td></tr></table>');
-  w.document.write('<div class="section-title">EQUIPOS ALQUILADOS Y VALOR DE REPOSICIÓN</div>');
-  w.document.write('<table><thead><tr><th>Producto</th><th style="text-align:center">Cant.</th><th style="text-align:right">Valor Reposición</th></tr></thead><tbody>'+prodsTable+'</tbody>');
-  w.document.write('<tr class="total-row"><td colspan="2">TOTAL MÁXIMO RESPONSABILIDAD</td><td style="text-align:right">$'+fmt(totalPagare)+'</td></tr></table>');
-  w.document.write('<div class="clausula">');
-  w.document.write('<strong>CLÁUSULA DE RESPONSABILIDAD:</strong><br><br>');
-  w.document.write('Yo, <strong>'+reserva.cliente+'</strong>, DNI N° <strong>'+(dni||'_______________')+'</strong>, en calidad de locatario/a, declaro haber recibido en perfecto estado de conservación y funcionamiento los equipos detallados precedentemente, comprometiéndome a:<br><br>');
-  w.document.write('1. Devolver los equipos en las mismas condiciones en que fueron entregados.<br>');
-  w.document.write('2. Utilizar los equipos de manera responsable y conforme a su uso habitual.<br>');
-  w.document.write('3. Comunicar inmediatamente cualquier desperfecto o inconveniente.<br>');
-  w.document.write('4. En caso de <strong>rotura, extravío o daño</strong> de cualquiera de los equipos, me obligo a abonar el valor de reposición indicado en la tabla precedente.<br>');
-  w.document.write('5. El presente pagaré tiene carácter de declaración jurada y compromiso de pago.<br><br>');
-  w.document.write('<strong>Devolución pactada:</strong> '+(reserva.devolucionFecha||'según acordado')+' a las '+(reserva.devolucionHora||'__:__')+'<br>');
-  w.document.write('<strong>Monto del alquiler:</strong> $'+fmt(reserva.total));
+
+  // TITULO
+  w.document.write('<h1>P A G A R É</h1>');
+  w.document.write('<div class="header-info">CARHUÉ RENT | infocarhuerent@gmail.com | Carhué, Buenos Aires</div>');
+
+  // MONTO
+  w.document.write('<div class="monto-box">');
+  w.document.write('<p style="font-size:11px;margin:0 0 6px;color:#92400e">BUENO POR:</p>');
+  w.document.write('<p style="font-size:24px;font-weight:900;margin:0;color:#b45309">$ '+fmt(totalPagare)+'</p>');
+  w.document.write('<p style="font-size:12px;margin:4px 0 0;color:#92400e;text-transform:uppercase">( '+montoLetras+' pesos argentinos )</p>');
   w.document.write('</div>');
-  w.document.write('<div class="firma-section"><div class="firma-box"><div class="firma-line">Firma del Cliente</div><p style="font-size:10px;margin-top:4px">'+reserva.cliente+'<br>DNI: '+(dni||'___')+'</p></div><div class="firma-box"><div class="firma-line">Firma Carhué Rent</div><p style="font-size:10px;margin-top:4px">Representante</p></div></div>');
-  w.document.write('<p style="text-align:center;margin-top:30px;font-size:10px;color:#999">Documento generado automáticamente - '+hoy+' - Reserva '+reserva.id+'</p>');
+
+  // CUERPO DEL PAGARE
+  w.document.write('<div class="compromiso">');
+  w.document.write('<p>Por este <strong>PAGARÉ</strong> me comprometo a pagar <strong>incondicionalmente</strong> a la orden de <strong>CARHUÉ RENT</strong>, el día <strong>'+fechaVenc+'</strong>, en la ciudad de <strong>Carhué, Provincia de Buenos Aires</strong>, la suma de <strong>'+montoLetras+' pesos argentinos ($'+fmt(totalPagare)+')</strong>.</p><br>');
+  w.document.write('<p>Este pagaré se emite en concepto de <strong>garantía por el alquiler</strong> de los siguientes equipos:</p>');
+  w.document.write('</div>');
+
+  // TABLA EQUIPOS
+  w.document.write('<table><thead><tr><th>Equipo / Descripción</th><th style="text-align:center">Cant.</th><th style="text-align:right">Valor Garantía</th></tr></thead><tbody>'+prodsTable+'</tbody>');
+  w.document.write('<tr class="total-row"><td colspan="2">TOTAL GARANTÍA</td><td style="text-align:right">$ '+fmt(totalPagare)+'</td></tr></table>');
+
+  // CLAUSULAS
+  w.document.write('<div class="compromiso">');
+  w.document.write('<p><strong>CONDICIONES:</strong></p>');
+  w.document.write('<p>1. De devolverse la/s unidad/es en las <strong>mismas condiciones</strong> en que fueron entregadas, este pagaré será <strong>devuelto al suscriptor</strong> y quedará sin efecto.</p>');
+  w.document.write('<p>2. En caso de <strong>daño, rotura, extravío o no devolución</strong> de cualquiera de los equipos, el beneficiario queda facultado a <strong>ejecutar este título de crédito</strong> por el monto total o parcial correspondiente al daño.</p>');
+  w.document.write('<p>3. El presente constituye un <strong>título de crédito</strong> en los términos de la legislación vigente.</p>');
+  w.document.write('</div>');
+
+  // EJECUCION
+  w.document.write('<div class="ejecucion">');
+  w.document.write('<strong>CLÁUSULA DE EJECUCIÓN:</strong> En caso de incumplimiento, el beneficiario podrá ejecutar el presente pagaré por vía judicial sin necesidad de interpelación previa, renunciando el suscriptor a oponer excepciones dilatorias. Los gastos y honorarios que se originen serán a cargo del suscriptor.');
+  w.document.write('</div>');
+
+  // DATOS DEL SUSCRIPTOR
+  w.document.write('<div class="datos-suscriptor">');
+  w.document.write('<p style="font-weight:bold;margin:0 0 6px">DATOS DEL SUSCRIPTOR:</p>');
+  w.document.write('<table style="border:none"><tr style="border:none"><td style="border:none;padding:3px"><strong>Nombre:</strong> '+reserva.cliente+'</td><td style="border:none;padding:3px"><strong>DNI:</strong> '+(dni||'_______________')+'</td></tr>');
+  w.document.write('<tr style="border:none"><td style="border:none;padding:3px" colspan="2"><strong>Domicilio:</strong> '+(domicilio||'_________________________________')+'</td></tr>');
+  w.document.write('<tr style="border:none"><td style="border:none;padding:3px"><strong>Teléfono:</strong> '+reserva.telefono+'</td><td style="border:none;padding:3px"><strong>Email:</strong> '+(reserva.email||'-')+'</td></tr></table>');
+  w.document.write('</div>');
+
+  // LUGAR Y FECHA
+  w.document.write('<p style="margin-top:16px"><strong>Lugar y fecha de emisión:</strong> Carhué, Buenos Aires, '+hoy+'</p>');
+  w.document.write('<p><strong>Fecha de vencimiento:</strong> '+fechaVenc+'</p>');
+  w.document.write('<p><strong>Reserva N°:</strong> '+reserva.id+'</p>');
+
+  // FIRMAS
+  w.document.write('<div class="firma-section"><div class="firma-box"><div class="firma-line">Firma del Suscriptor</div><p style="font-size:10px;margin-top:4px">'+reserva.cliente+'<br>DNI: '+(dni||'___')+'<br>Domicilio: '+(domicilio||'___')+'</p></div><div class="firma-box"><div class="firma-line">Beneficiario: CARHUÉ RENT</div><p style="font-size:10px;margin-top:4px">Representante autorizado</p></div></div>');
+  w.document.write('<p style="text-align:center;margin-top:20px;font-size:9px;color:#999">Este documento constituye un PAGARÉ válido como título de crédito. Reserva N° '+reserva.id+' - Emitido el '+hoy+'</p>');
   w.document.write('</body></html>');
   w.document.close();
   setTimeout(function(){w.print()},400);
