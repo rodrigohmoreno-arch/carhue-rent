@@ -502,32 +502,77 @@ function loadData(){
 }
 
 function callBackend(fn,args,onOk,onErr){
-  var postActions=['crearReserva','reservarExcursion','login','confirmarReserva','cancelarReserva','devolverReserva','confirmarExcursion','agregarProducto','editarProducto','eliminarProducto','actualizarStock','agregarExcursion','editarExcursion','eliminarExcursion','agregarProductoUtil','editarProductoUtil','eliminarProductoUtil','comprarProductoUtil','confirmarCompra','enviarResena'];
-  var isPost=postActions.indexOf(fn)!==-1;
-  var url,options;
+  // Detectar si estamos dentro de Google Apps Script
+  if(typeof google!=='undefined'&&google.script&&google.script.run){
+    // Usar google.script.run (directo, sin fetch)
+    var runner=google.script.run.withSuccessHandler(function(result){
+      try{var d=typeof result==='string'?JSON.parse(result):result;if(onOk)onOk(d)}catch(e){if(onErr)onErr(e)}
+    }).withFailureHandler(function(err){
+      console.warn('GAS error ('+fn+'):',err);
+      if(onErr)onErr(err);
+    });
 
-  if(isPost){
-    url=GAS_URL;
-    var body={action:fn};
-    if(fn==='login'){body.user=args[0];body.pass=args[1]}
-    else if(args&&args.length>0){
-      if(fn.indexOf('confirmar')===0||fn.indexOf('cancelar')===0||fn.indexOf('devolver')===0||fn.indexOf('eliminar')===0){body.id=args[0]}
-      else if(fn==='actualizarStock'){body.id=args[0];body.stock=args[1]}
-      else{body.datos=args[0]}
+    // Llamar la función correcta con los argumentos apropiados
+    switch(fn){
+      case 'getProductos':runner.getProductos();break;
+      case 'getExcursiones':runner.getExcursiones();break;
+      case 'getProductosUtiles':runner.getProductosUtiles();break;
+      case 'getReservasAdmin':runner.getReservasAdmin();break;
+      case 'getResenas':runner.getResenas();break;
+      case 'getCalendarioExcursiones':runner.getCalendarioExcursiones(args[0],args[1]);break;
+      case 'getReservas':runner.getReservas(args[0],args[1]);break;
+      case 'login':runner.login(args[0],args[1]);break;
+      case 'crearReserva':runner.crearReserva(args[0]);break;
+      case 'reservarExcursion':runner.reservarExcursion(args[0]);break;
+      case 'confirmarReserva':runner.confirmarReserva(args[0]);break;
+      case 'confirmarExcursion':runner.confirmarExcursion(args[0]);break;
+      case 'cancelarReserva':runner.cancelarReserva(args[0]);break;
+      case 'devolverReserva':runner.devolverReserva(args[0]);break;
+      case 'agregarProducto':runner.agregarProducto(args[0]);break;
+      case 'editarProducto':runner.editarProducto(args[0]);break;
+      case 'eliminarProducto':runner.eliminarProducto(args[0]);break;
+      case 'actualizarStock':runner.actualizarStock(args[0],args[1]);break;
+      case 'agregarExcursion':runner.agregarExcursion(args[0]);break;
+      case 'editarExcursion':runner.editarExcursion(args[0]);break;
+      case 'eliminarExcursion':runner.eliminarExcursion(args[0]);break;
+      case 'agregarProductoUtil':runner.agregarProductoUtil(args[0]);break;
+      case 'editarProductoUtil':runner.editarProductoUtil(args[0]);break;
+      case 'eliminarProductoUtil':runner.eliminarProductoUtil(args[0]);break;
+      case 'comprarProductoUtil':runner.comprarProductoUtil(args[0]);break;
+      case 'confirmarCompra':runner.confirmarCompra(args[0]);break;
+      case 'enviarResena':runner.enviarResena(args[0]);break;
+      case 'inicializarSistema':runner.inicializarSistema();break;
+      default:if(onErr)onErr('Función no encontrada: '+fn);
     }
-    options={method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body),redirect:'follow'};
   } else {
-    url=GAS_URL+'?action='+fn;
-    if(fn==='getReservas'||fn==='getCalendarioExcursiones'){if(args&&args.length>=2)url+='&mes='+args[0]+'&anio='+args[1]}
-    options={method:'GET',redirect:'follow'};
-  }
+    // Fallback: usar fetch (para hosting externo)
+    var postActions=['crearReserva','reservarExcursion','login','confirmarReserva','cancelarReserva','devolverReserva','confirmarExcursion','agregarProducto','editarProducto','eliminarProducto','actualizarStock','agregarExcursion','editarExcursion','eliminarExcursion','agregarProductoUtil','editarProductoUtil','eliminarProductoUtil','comprarProductoUtil','confirmarCompra','enviarResena'];
+    var isPost=postActions.indexOf(fn)!==-1;
+    var url,options;
 
-  fetch(url,options).then(function(r){return r.text()}).then(function(t){
-    try{var d=JSON.parse(t);if(onOk)onOk(d)}catch(e){if(onErr)onErr(e)}
-  }).catch(function(err){
-    console.warn('Fetch error ('+fn+'):',err);
-    useDemoFallback(fn,onOk);
-  });
+    if(isPost){
+      url=GAS_URL;
+      var body={action:fn};
+      if(fn==='login'){body.user=args[0];body.pass=args[1]}
+      else if(args&&args.length>0){
+        if(fn.indexOf('confirmar')===0||fn.indexOf('cancelar')===0||fn.indexOf('devolver')===0||fn.indexOf('eliminar')===0){body.id=args[0]}
+        else if(fn==='actualizarStock'){body.id=args[0];body.stock=args[1]}
+        else{body.datos=args[0]}
+      }
+      options={method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body),redirect:'follow'};
+    } else {
+      url=GAS_URL+'?action='+fn;
+      if(fn==='getReservas'||fn==='getCalendarioExcursiones'){if(args&&args.length>=2)url+='&mes='+args[0]+'&anio='+args[1]}
+      options={method:'GET',redirect:'follow'};
+    }
+
+    fetch(url,options).then(function(r){return r.text()}).then(function(t){
+      try{var d=JSON.parse(t);if(onOk)onOk(d)}catch(e){if(onErr)onErr(e)}
+    }).catch(function(err){
+      console.warn('Fetch error ('+fn+'):',err);
+      useDemoFallback(fn,onOk);
+    });
+  }
 }
 
 function useDemoFallback(fn,onOk){
