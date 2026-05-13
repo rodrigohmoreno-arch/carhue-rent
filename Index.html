@@ -956,34 +956,102 @@ function generarDeslinde(id){
 function printDeslinde(reserva,dni,cantPersonas){
   var hoy=new Date().toLocaleDateString('es-AR');
   var excNombre=(reserva.productos&&reserva.productos[0])?reserva.productos[0].nombre:'Excursión';
-  var w=window.open('','_blank','width=700,height=900');
+  var w=window.open('','_blank','width=700,height=1000');
   w.document.write('<html><head><title>Deslinde - '+reserva.id+'</title>');
-  w.document.write('<style>body{font-family:Arial,sans-serif;padding:40px;font-size:13px;max-width:650px;margin:0 auto;line-height:1.6}h1{text-align:center;font-size:22px;margin:0 0 4px;text-transform:uppercase}h2{text-align:center;font-size:15px;margin:0 0 20px;color:#b91c1c}.header-info{text-align:center;margin-bottom:20px;font-size:11px;color:#666}.section-title{font-weight:bold;font-size:14px;margin:20px 0 8px;padding-bottom:4px;border-bottom:2px solid #333}table{width:100%;border-collapse:collapse;margin:10px 0}td{padding:8px;text-align:left;border:1px solid #ddd}.clausula{background:#fef2f2;padding:16px;border-radius:6px;margin:16px 0;font-size:11.5px;line-height:1.8;border:1px solid #fecaca}.firma-section{margin-top:40px;display:flex;justify-content:space-between}.firma-box{text-align:center;width:45%}.firma-line{border-top:1px solid #333;margin-top:60px;padding-top:6px;font-size:11px}.warning{background:#fef3c7;border:1px solid #f59e0b;padding:12px;border-radius:6px;margin:12px 0;font-size:12px;text-align:center;font-weight:bold}@media print{body{padding:20px}}</style>');
+  w.document.write('<style>body{font-family:Arial,sans-serif;padding:40px;font-size:12.5px;max-width:650px;margin:0 auto;line-height:1.6}h1{text-align:center;font-size:22px;margin:0 0 4px;text-transform:uppercase}h2{text-align:center;font-size:14px;margin:0 0 20px;color:#b91c1c;text-transform:uppercase}.header-info{text-align:center;margin-bottom:20px;font-size:11px;color:#666}.section-title{font-weight:bold;font-size:13px;margin:18px 0 8px;padding-bottom:4px;border-bottom:2px solid #333;text-transform:uppercase}table{width:100%;border-collapse:collapse;margin:10px 0}td{padding:7px;text-align:left;border:1px solid #ddd;font-size:12px}.clausula{background:#fef2f2;padding:14px;border-radius:6px;margin:12px 0;font-size:11px;line-height:1.7;border:1px solid #fecaca}.nota{background:#f0fdf4;padding:10px;border-radius:6px;margin:10px 0;font-size:10.5px;line-height:1.6;border:1px solid #bbf7d0}.firma-section{margin-top:30px;display:flex;justify-content:space-between}.firma-box{text-align:center;width:45%}.firma-line{border-top:1px solid #333;margin-top:50px;padding-top:6px;font-size:11px}.warning{background:#fef3c7;border:1px solid #f59e0b;padding:10px;border-radius:6px;margin:12px 0;font-size:11.5px;text-align:center;font-weight:bold}@media print{body{padding:15px;font-size:11px}.clausula{font-size:10px}.firma-line{margin-top:40px}}</style>');
   w.document.write('</head><body>');
   w.document.write('<h1>CARHUÉ RENT</h1>');
-  w.document.write('<h2>DESLINDE DE RESPONSABILIDAD - EXCURSIÓN</h2>');
-  w.document.write('<div class="header-info">infocarhuerent@gmail.com | Carhué, Buenos Aires</div>');
-  w.document.write('<div class="section-title">DATOS DE LA EXCURSIÓN</div>');
+  w.document.write('<h2>Deslinde de Responsabilidad y Asunción de Riesgo</h2>');
+  w.document.write('<div class="header-info">infocarhuerent@gmail.com | Carhué, Buenos Aires<br>Actividades al aire libre - Excursiones - Trekking</div>');
+
+  // DATOS
+  w.document.write('<div class="section-title">1. Datos de la Excursión</div>');
   w.document.write('<table><tr><td><strong>N° Reserva:</strong> '+reserva.id+'</td><td><strong>Fecha:</strong> '+hoy+'</td></tr>');
-  w.document.write('<tr><td><strong>Excursión:</strong> '+excNombre+'</td><td><strong>Personas:</strong> '+cantPersonas+'</td></tr>');
-  w.document.write('<tr><td><strong>Contratante:</strong> '+reserva.cliente+'</td><td><strong>DNI:</strong> '+(dni||'_______________')+'</td></tr>');
+  w.document.write('<tr><td><strong>Excursión:</strong> '+excNombre+'</td><td><strong>Cant. Personas:</strong> '+cantPersonas+'</td></tr>');
+  w.document.write('<tr><td><strong>Contratante:</strong> '+reserva.cliente+'</td><td><strong>DNI/Doc:</strong> '+(dni||'_______________')+'</td></tr>');
   w.document.write('<tr><td><strong>Teléfono:</strong> '+reserva.telefono+'</td><td><strong>Email:</strong> '+(reserva.email||'-')+'</td></tr></table>');
-  w.document.write('<div class="warning">⚠️ DOCUMENTO OBLIGATORIO - LEER ATENTAMENTE ANTES DE FIRMAR</div>');
+
+  w.document.write('<div class="warning">DOCUMENTO OBLIGATORIO - PROCEDIMIENTO ESTÁNDAR EN ACTIVIDADES AL AIRE LIBRE</div>');
+
+  // ASUNCION DE RIESGO
+  w.document.write('<div class="section-title">2. Asunción Voluntaria de Riesgo</div>');
   w.document.write('<div class="clausula">');
-  w.document.write('<strong>DECLARACIÓN DE DESLINDE DE RESPONSABILIDAD:</strong><br><br>');
-  w.document.write('Yo, <strong>'+reserva.cliente+'</strong>, DNI N° <strong>'+(dni||'_______________')+'</strong>, en carácter de contratante de la excursión detallada, declaro y acepto lo siguiente:<br><br>');
-  w.document.write('1. Conozco que la actividad contratada implica riesgos inherentes a actividades al aire libre, incluyendo pero no limitado a: caídas, golpes, torceduras, rasguños, exposición climática y otros accidentes.<br><br>');
-  w.document.write('2. Participo de la excursión de manera <strong>voluntaria</strong>, asumiendo personalmente todos los riesgos que pudieran derivarse de la misma.<br><br>');
-  w.document.write('3. <strong>CARHUÉ RENT NO SE RESPONSABILIZA</strong> por ningún tipo de accidente, lesión, daño físico o material que pudiera ocurrir durante el desarrollo de la excursión, incluyendo el traslado hacia y desde el punto de encuentro.<br><br>');
-  w.document.write('4. Declaro encontrarme en buen estado de salud física y mental para realizar la actividad contratada. En caso de poseer alguna condición médica preexistente, me comprometo a informarlo antes del inicio de la actividad.<br><br>');
-  w.document.write('5. Me comprometo a seguir en todo momento las indicaciones y recomendaciones del guía asignado, respetando las normas de seguridad establecidas.<br><br>');
-  w.document.write('6. Eximo de toda responsabilidad civil y/o penal a <strong>CARHUÉ RENT</strong>, sus representantes, empleados y guías, por cualquier accidente, caída, golpe, lesión o daño que pudiera sufrir durante la excursión.<br><br>');
-  w.document.write('7. En caso de participar menores de edad, declaro ser su responsable legal y asumo la totalidad de la responsabilidad por ellos.<br><br>');
-  w.document.write('8. El presente deslinde tiene validez durante toda la duración de la excursión contratada (desde el punto de encuentro hasta la finalización de la actividad).');
+  w.document.write('Yo, <strong>'+reserva.cliente+'</strong>, DNI N° <strong>'+(dni||'_______________')+'</strong>, declaro conocer y aceptar voluntariamente que la actividad contratada (<strong>'+excNombre+'</strong>) implica <strong>riesgos objetivos inherentes</strong> a las actividades al aire libre, incluyendo pero no limitado a:<br><br>');
+  w.document.write('• Cambios climáticos repentinos (lluvia, viento, temperatura extrema)<br>');
+  w.document.write('• Terrenos difíciles, irregulares o resbaladizos<br>');
+  w.document.write('• Caídas, golpes, torceduras, rasguños y abrasiones<br>');
+  w.document.write('• Fatiga, deshidratación o exposición solar<br>');
+  w.document.write('• Contacto con fauna o flora silvestre<br>');
+  w.document.write('• Riesgos propios del entorno natural y acuático<br><br>');
+  w.document.write('Participo de la excursión de manera <strong>enteramente voluntaria</strong>, asumiendo personalmente la totalidad de los riesgos que pudieran derivarse de la misma.');
   w.document.write('</div>');
-  w.document.write('<table style="margin-top:10px"><tr><td><strong>Horario de excursión:</strong> Según reserva</td><td><strong>Monto abonado:</strong> $'+fmt(reserva.total)+'</td></tr></table>');
-  w.document.write('<div class="firma-section"><div class="firma-box"><div class="firma-line">Firma del Contratante</div><p style="font-size:10px;margin-top:4px">'+reserva.cliente+'<br>DNI: '+(dni||'___')+'</p></div><div class="firma-box"><div class="firma-line">Firma Carhué Rent</div><p style="font-size:10px;margin-top:4px">Representante</p></div></div>');
-  w.document.write('<p style="text-align:center;margin-top:30px;font-size:10px;color:#999">Documento generado automáticamente - '+hoy+' - Reserva '+reserva.id+'</p>');
+
+  // DECLARACION DE SALUD
+  w.document.write('<div class="section-title">3. Declaración Jurada de Salud</div>');
+  w.document.write('<div class="clausula">');
+  w.document.write('Declaro <strong>bajo juramento</strong> que me encuentro en condiciones <strong>físicas y mentales óptimas</strong> para realizar la actividad contratada. No padezco enfermedades cardíacas, respiratorias, neurológicas ni condición alguna que pueda verse agravada por el esfuerzo físico o la exposición al aire libre.<br><br>');
+  w.document.write('En caso de poseer alguna condición médica preexistente, alergia o medicación habitual, me comprometo a <strong>informarlo por escrito antes del inicio</strong> de la actividad al guía responsable.<br><br>');
+  w.document.write('Condiciones declaradas (completar o indicar "ninguna"): ___________________________________');
+  w.document.write('</div>');
+
+  // CUMPLIMIENTO DE NORMAS
+  w.document.write('<div class="section-title">4. Cumplimiento de Normas y Seguridad</div>');
+  w.document.write('<div class="clausula">');
+  w.document.write('Me comprometo a:<br>');
+  w.document.write('• Seguir en todo momento las <strong>instrucciones y recomendaciones</strong> del guía asignado.<br>');
+  w.document.write('• Respetar las <strong>medidas de seguridad</strong> establecidas para la actividad.<br>');
+  w.document.write('• No abandonar el grupo ni el recorrido establecido sin autorización del guía.<br>');
+  w.document.write('• No consumir alcohol ni sustancias que alteren mis capacidades antes o durante la excursión.<br>');
+  w.document.write('• Utilizar correctamente el equipamiento de seguridad provisto (chaleco, casco, arnés, etc.).');
+  w.document.write('</div>');
+
+  // RENUNCIA DE RECLAMOS
+  w.document.write('<div class="section-title">5. Renuncia de Reclamos y Eximición de Responsabilidad</div>');
+  w.document.write('<div class="clausula" style="background:#fef2f2;border-color:#f87171">');
+  w.document.write('<strong>CARHUÉ RENT NO SE RESPONSABILIZA</strong> por ningún tipo de accidente, lesión, daño físico o material que pudiera ocurrir durante el desarrollo de la excursión.<br><br>');
+  w.document.write('Por el presente, <strong>eximo y libero de toda responsabilidad civil, penal, judicial y extrajudicial</strong> a CARHUÉ RENT, sus representantes, propietarios, empleados, guías, instructores y toda entidad relacionada, por cualquier:<br><br>');
+  w.document.write('• Accidente, caída, golpe o lesión corporal<br>');
+  w.document.write('• Daño material o pérdida de bienes personales<br>');
+  w.document.write('• Perjuicio directo o indirecto derivado de la actividad<br><br>');
+  w.document.write('<strong>Renuncio expresamente</strong> a efectuar cualquier reclamo, demanda o acción legal contra CARHUÉ RENT y/o sus colaboradores por los hechos mencionados.');
+  w.document.write('</div>');
+
+  // RESPONSABILIDAD PERSONAL
+  w.document.write('<div class="section-title">6. Responsabilidad Personal y Bienes</div>');
+  w.document.write('<div class="clausula">');
+  w.document.write('Asumo la <strong>total responsabilidad</strong> por mis bienes personales y equipo durante la excursión (celular, cámara, mochila, vestimenta, dinero, documentación, etc.).<br><br>');
+  w.document.write('CARHUÉ RENT no se responsabiliza por pérdidas, robos, roturas o extravíos de objetos personales durante la actividad.<br><br>');
+  w.document.write('Asimismo, me responsabilizo por cualquier daño que pudiera ocasionar al equipamiento provisto por CARHUÉ RENT durante la excursión.');
+  w.document.write('</div>');
+
+  // MENORES
+  w.document.write('<div class="section-title">7. Menores de Edad</div>');
+  w.document.write('<div class="clausula">');
+  w.document.write('En caso de participar <strong>menores de edad</strong> en la excursión, el firmante declara ser su <strong>padre, madre o tutor legal</strong> y asume la totalidad de la responsabilidad por ellos, extendiendo todas las cláusulas del presente deslinde a los menores a su cargo.<br><br>');
+  w.document.write('Menores participantes: ___________________________________<br>');
+  w.document.write('Vínculo con el menor: ___________________________________');
+  w.document.write('</div>');
+
+  // SEGURO
+  w.document.write('<div class="section-title">8. Seguro y Cobertura</div>');
+  w.document.write('<div class="nota">');
+  w.document.write('<strong>NOTA IMPORTANTE:</strong> Se recomienda a los participantes contar con un <strong>seguro de responsabilidad civil y/o seguro de accidentes personales</strong> para cubrir posibles daños propios y a terceros durante la actividad.<br><br>');
+  w.document.write('CARHUÉ RENT cuenta con seguro de responsabilidad civil general, el cual NO cubre lesiones autoinfligidas, negligencia del participante ni incumplimiento de las normas de seguridad.');
+  w.document.write('</div>');
+
+  // VALIDEZ
+  w.document.write('<div class="section-title">9. Validez y Alcance</div>');
+  w.document.write('<div class="clausula">');
+  w.document.write('El presente deslinde tiene validez durante <strong>toda la duración de la excursión</strong> contratada, desde el punto de encuentro hasta la finalización de la actividad, incluyendo traslados.<br><br>');
+  w.document.write('La firma del presente documento es <strong>condición obligatoria</strong> para participar de la excursión. Es un procedimiento estándar en trekking, escalada, navegación y actividades al aire libre.');
+  w.document.write('</div>');
+
+  // DATOS FINALES
+  w.document.write('<table style="margin-top:10px"><tr><td><strong>Excursión:</strong> '+excNombre+'</td><td><strong>Monto abonado:</strong> $'+fmt(reserva.total)+'</td></tr></table>');
+
+  // FIRMAS
+  w.document.write('<div class="firma-section"><div class="firma-box"><div class="firma-line">Firma del Contratante/Participante</div><p style="font-size:10px;margin-top:4px">'+reserva.cliente+'<br>DNI: '+(dni||'___')+'</p></div><div class="firma-box"><div class="firma-line">Firma Carhué Rent</div><p style="font-size:10px;margin-top:4px">Representante autorizado</p></div></div>');
+  w.document.write('<p style="text-align:center;margin-top:20px;font-size:9px;color:#999">Documento generado automáticamente el '+hoy+' - Reserva N° '+reserva.id+' - Este documento tiene carácter de declaración jurada.</p>');
   w.document.write('</body></html>');
   w.document.close();
   setTimeout(function(){w.print()},400);
