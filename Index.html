@@ -821,7 +821,7 @@ function loadAdminReservas(){
       var estadoClass='estado-'+r.estado;
       var actions='';
       if(r.estado==='pendiente')actions='<button class="btn btn-success btn-sm" onclick="adminConfirmar(\''+r.id+'\',\''+r.tipo+'\')"><i class="fa-solid fa-check"></i></button> <button class="btn btn-danger btn-sm" onclick="adminCancelar(\''+r.id+'\')"><i class="fa-solid fa-xmark"></i></button>';
-      else if(r.estado==='confirmada'&&r.tipo==='alquiler')actions='<button class="btn btn-secondary btn-sm" onclick="adminDevolver(\''+r.id+'\')"><i class="fa-solid fa-rotate-left"></i> Dev</button> <button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="reprintTicket(\''+r.id+'\')"><i class="fa-solid fa-print"></i></button> <button class="btn btn-sm" style="background:#dc2626;color:#fff" onclick="generarPagare(\''+r.id+'\')"><i class="fa-solid fa-file-signature"></i> Pagaré</button>';
+      else if(r.estado==='confirmada'&&r.tipo==='alquiler')actions='<button class="btn btn-secondary btn-sm" onclick="adminDevolver(\''+r.id+'\')"><i class="fa-solid fa-rotate-left"></i> Dev</button> <button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="reprintTicket(\''+r.id+'\')"><i class="fa-solid fa-print"></i></button> <button class="btn btn-sm" style="background:#dc2626;color:#fff" onclick="generarPagare(\''+r.id+'\')"><i class="fa-solid fa-file-signature"></i> Pagaré</button> <button class="btn btn-sm" style="background:#b91c1c;color:#fff" onclick="generarDeslindeAlquiler(\''+r.id+'\')"><i class="fa-solid fa-file-shield"></i> Deslinde</button>';
       else if(r.estado==='confirmada'&&r.tipo==='excursion')actions='<button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="reprintTicket(\''+r.id+'\')"><i class="fa-solid fa-print"></i></button> <button class="btn btn-sm" style="background:#b91c1c;color:#fff" onclick="generarDeslinde(\''+r.id+'\')"><i class="fa-solid fa-file-shield"></i> Deslinde</button>';
       else if(r.estado==='confirmada')actions='<button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="reprintTicket(\''+r.id+'\')"><i class="fa-solid fa-print"></i></button>';
       if(r.estado==='devuelta')actions='<button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="reprintTicket(\''+r.id+'\')"><i class="fa-solid fa-print"></i></button>';
@@ -1052,6 +1052,118 @@ function printDeslinde(reserva,dni,cantPersonas){
   // FIRMAS
   w.document.write('<div class="firma-section"><div class="firma-box"><div class="firma-line">Firma del Contratante/Participante</div><p style="font-size:10px;margin-top:4px">'+reserva.cliente+'<br>DNI: '+(dni||'___')+'</p></div><div class="firma-box"><div class="firma-line">Firma Carhué Rent</div><p style="font-size:10px;margin-top:4px">Representante autorizado</p></div></div>');
   w.document.write('<p style="text-align:center;margin-top:20px;font-size:9px;color:#999">Documento generado automáticamente el '+hoy+' - Reserva N° '+reserva.id+' - Este documento tiene carácter de declaración jurada.</p>');
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print()},400);
+}
+
+function generarDeslindeAlquiler(id){
+  var reserva=findReservaById(id);
+  if(!reserva){toast('Reserva no encontrada','error');return}
+  var dni=prompt('DNI/Documento del usuario:','');
+  if(dni===null)return;
+  printDeslindeAlquiler(reserva,dni);
+}
+
+function printDeslindeAlquiler(reserva,dni){
+  var hoy=new Date().toLocaleDateString('es-AR');
+  var prods=(reserva.productos||[]).map(function(p){return p.nombre+' (x'+(p.cantidad||1)+')'}).join(', ');
+  var prodsTable=(reserva.productos||[]).map(function(p){return'<tr><td>'+p.nombre+'</td><td style="text-align:center">'+(p.cantidad||1)+'</td><td style="text-align:center">Bueno</td></tr>'}).join('');
+  var w=window.open('','_blank','width=700,height=1000');
+  w.document.write('<html><head><title>Deslinde Alquiler - '+reserva.id+'</title>');
+  w.document.write('<style>body{font-family:Arial,sans-serif;padding:40px;font-size:12.5px;max-width:650px;margin:0 auto;line-height:1.6}h1{text-align:center;font-size:22px;margin:0 0 4px;text-transform:uppercase}h2{text-align:center;font-size:14px;margin:0 0 20px;color:#b91c1c;text-transform:uppercase}.header-info{text-align:center;margin-bottom:20px;font-size:11px;color:#666}.section-title{font-weight:bold;font-size:13px;margin:18px 0 8px;padding-bottom:4px;border-bottom:2px solid #333;text-transform:uppercase}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{padding:7px;text-align:left;border:1px solid #ddd;font-size:12px}th{background:#f5f5f5}.clausula{background:#fef2f2;padding:14px;border-radius:6px;margin:12px 0;font-size:11px;line-height:1.7;border:1px solid #fecaca}.nota{background:#eff6ff;padding:10px;border-radius:6px;margin:10px 0;font-size:10.5px;line-height:1.6;border:1px solid #bfdbfe}.firma-section{margin-top:30px;display:flex;justify-content:space-between}.firma-box{text-align:center;width:45%}.firma-line{border-top:1px solid #333;margin-top:50px;padding-top:6px;font-size:11px}.warning{background:#fef3c7;border:1px solid #f59e0b;padding:10px;border-radius:6px;margin:12px 0;font-size:11.5px;text-align:center;font-weight:bold}@media print{body{padding:15px;font-size:11px}.clausula{font-size:10px}.firma-line{margin-top:40px}}</style>');
+  w.document.write('</head><body>');
+  w.document.write('<h1>CARHUÉ RENT</h1>');
+  w.document.write('<h2>Deslinde de Responsabilidad - Alquiler de Equipos</h2>');
+  w.document.write('<div class="header-info">infocarhuerent@gmail.com | Carhué, Buenos Aires<br>Alquiler de Bicicletas, Motos Eléctricas, Kayaks y Equipos</div>');
+
+  // DATOS
+  w.document.write('<div class="section-title">1. Datos del Alquiler</div>');
+  w.document.write('<table><tr><td><strong>N° Reserva:</strong> '+reserva.id+'</td><td><strong>Fecha:</strong> '+hoy+'</td></tr>');
+  w.document.write('<tr><td><strong>Usuario:</strong> '+reserva.cliente+'</td><td><strong>DNI/Doc:</strong> '+(dni||'_______________')+'</td></tr>');
+  w.document.write('<tr><td><strong>Teléfono:</strong> '+reserva.telefono+'</td><td><strong>Email:</strong> '+(reserva.email||'-')+'</td></tr>');
+  w.document.write('<tr><td><strong>Desde:</strong> '+reserva.fechaDesde+'</td><td><strong>Hasta:</strong> '+reserva.fechaHasta+'</td></tr></table>');
+
+  // EQUIPOS
+  w.document.write('<div class="section-title">2. Estado del Equipo al Momento de Entrega</div>');
+  w.document.write('<table><thead><tr><th>Equipo</th><th style="text-align:center">Cant.</th><th style="text-align:center">Estado al entregar</th></tr></thead><tbody>'+prodsTable+'</tbody></table>');
+  w.document.write('<p style="font-size:10px;color:#666;margin:4px 0">El usuario confirma haber revisado el equipo y recibirlo en buen estado de funcionamiento.</p>');
+
+  w.document.write('<div class="warning">DOCUMENTO OBLIGATORIO - LEER ATENTAMENTE ANTES DE FIRMAR</div>');
+
+  // ASUNCION DE RIESGO
+  w.document.write('<div class="section-title">3. Asunción de Riesgo</div>');
+  w.document.write('<div class="clausula">');
+  w.document.write('Yo, <strong>'+reserva.cliente+'</strong>, DNI N° <strong>'+(dni||'_______________')+'</strong>, declaro conocer y aceptar voluntariamente los <strong>peligros asociados</strong> al uso de los equipos alquilados, incluyendo pero no limitado a:<br><br>');
+  w.document.write('• <strong>Caídas</strong> por pérdida de equilibrio, terreno irregular o maniobras inadecuadas<br>');
+  w.document.write('• <strong>Colisiones</strong> con otros vehículos, peatones, obstáculos o elementos fijos<br>');
+  w.document.write('• <strong>Condiciones climáticas</strong> adversas (lluvia, viento, piso mojado, baja visibilidad)<br>');
+  w.document.write('• <strong>Tránsito vehicular</strong> en vías públicas y caminos compartidos<br>');
+  w.document.write('• Lesiones corporales de diversa gravedad derivadas del uso del equipo<br><br>');
+  w.document.write('Asumo estos riesgos de manera <strong>voluntaria y consciente</strong>, eximiendo a CARHUÉ RENT de cualquier responsabilidad por los mismos.');
+  w.document.write('</div>');
+
+  // RENUNCIA DE RECLAMOS
+  w.document.write('<div class="section-title">4. Renuncia de Reclamos</div>');
+  w.document.write('<div class="clausula" style="background:#fef2f2;border-color:#f87171">');
+  w.document.write('Por el presente, <strong>libero y eximo de toda responsabilidad</strong> a CARHUÉ RENT, sus propietarios, empleados, representantes y colaboradores, por cualquier:<br><br>');
+  w.document.write('• <strong>Lesión corporal</strong> de cualquier naturaleza y gravedad<br>');
+  w.document.write('• <strong>Fallecimiento</strong> derivado del uso del equipo alquilado<br>');
+  w.document.write('• <strong>Daños materiales</strong> a bienes propios o de terceros<br><br>');
+  w.document.write('Renuncio expresamente a efectuar cualquier reclamo, demanda o acción judicial/extrajudicial contra CARHUÉ RENT por los hechos mencionados, ya sea en sede civil, penal o administrativa.');
+  w.document.write('</div>');
+
+  // RESPONSABILIDAD DEL EQUIPO
+  w.document.write('<div class="section-title">5. Responsabilidad del Equipo</div>');
+  w.document.write('<div class="clausula">');
+  w.document.write('Confirmo que:<br><br>');
+  w.document.write('• He <strong>revisado personalmente</strong> el equipo al momento de recibirlo y lo acepto en <strong>perfectas condiciones</strong> de funcionamiento.<br>');
+  w.document.write('• Me comprometo a <strong>devolver el equipo en las mismas condiciones</strong> en que fue entregado.<br>');
+  w.document.write('• Asumo la <strong>responsabilidad total</strong> por cualquier daño, rotura o extravío del equipo durante el período de alquiler.<br>');
+  w.document.write('• En caso de falla mecánica o desperfecto durante el uso, me comprometo a <strong>cesar inmediatamente</strong> la utilización y comunicar a CARHUÉ RENT.<br>');
+  w.document.write('• No realizaré modificaciones, reparaciones ni alteraciones al equipo sin autorización.');
+  w.document.write('</div>');
+
+  // DECLARACION DE APTITUD
+  w.document.write('<div class="section-title">6. Declaración de Aptitud</div>');
+  w.document.write('<div class="clausula">');
+  w.document.write('Certifico <strong>bajo declaración jurada</strong> que:<br><br>');
+  w.document.write('• Gozo de <strong>buena salud física</strong> para utilizar el equipo alquilado.<br>');
+  w.document.write('• Poseo las <strong>destrezas y habilidades necesarias</strong> para el manejo seguro del equipo.<br>');
+  w.document.write('• No me encuentro bajo los efectos de alcohol, drogas ni medicamentos que alteren mis capacidades.<br>');
+  w.document.write('• Conozco las normas de tránsito y seguridad vial aplicables.<br>');
+  w.document.write('• En el caso de vehículos motorizados, cuento con la documentación habilitante correspondiente.');
+  w.document.write('</div>');
+
+  // SITUACIONES DE RESPONSABILIDAD CIVIL
+  w.document.write('<div class="section-title">7. Responsabilidad Civil por Accidentes</div>');
+  w.document.write('<div class="clausula">');
+  w.document.write('<strong>A) Responsabilidad del Cliente:</strong><br>');
+  w.document.write('Si el accidente ocurre por <strong>imprudencia, negligencia, impericia</strong> o incumplimiento de normas de seguridad (incluyendo no uso de casco u otros elementos de protección), el cliente será el <strong>único responsable</strong> de las consecuencias y daños.<br><br>');
+  w.document.write('<strong>B) Responsabilidad de la Empresa:</strong><br>');
+  w.document.write('CARHUÉ RENT será responsable <strong>únicamente</strong> si el accidente se debe a un <strong>mantenimiento deficiente o falla mecánica conocida</strong> y no informada al usuario al momento de la entrega.<br><br>');
+  w.document.write('<strong>C) Vehículos Motorizados (Teoría del Riesgo):</strong><br>');
+  w.document.write('Conforme a la legislación vigente, el propietario de un vehículo motorizado puede ser responsable de los daños causados por el conductor. No obstante, CARHUÉ RENT queda eximida si el vehículo fue utilizado en <strong>contravención de las normas pactadas</strong>, en zonas no autorizadas, o si el accidente fue por <strong>culpa exclusiva del usuario o de un tercero</strong>.');
+  w.document.write('</div>');
+
+  // NORMAS DE USO
+  w.document.write('<div class="section-title">8. Normas de Uso Obligatorias</div>');
+  w.document.write('<div class="nota">');
+  w.document.write('El usuario se compromete a:<br>');
+  w.document.write('• Usar <strong>casco obligatoriamente</strong> (bicicletas y motos).<br>');
+  w.document.write('• Usar <strong>chaleco salvavidas</strong> (kayaks y actividades acuáticas).<br>');
+  w.document.write('• Respetar las <strong>normas de tránsito</strong> y límites de velocidad.<br>');
+  w.document.write('• No circular por zonas prohibidas o peligrosas.<br>');
+  w.document.write('• No prestar el equipo a terceros no autorizados.<br>');
+  w.document.write('• Devolver el equipo en el horario pactado.');
+  w.document.write('</div>');
+
+  // DEVOLUCION
+  w.document.write('<table style="margin-top:10px"><tr><td><strong>Devolución pactada:</strong> '+(reserva.devolucionFecha||'según acordado')+' a las '+(reserva.devolucionHora||'__:__')+'</td><td><strong>Monto alquiler:</strong> $'+fmt(reserva.total)+'</td></tr></table>');
+
+  // FIRMAS
+  w.document.write('<div class="firma-section"><div class="firma-box"><div class="firma-line">Firma del Usuario/Locatario</div><p style="font-size:10px;margin-top:4px">'+reserva.cliente+'<br>DNI: '+(dni||'___')+'</p></div><div class="firma-box"><div class="firma-line">Firma Carhué Rent</div><p style="font-size:10px;margin-top:4px">Representante autorizado</p></div></div>');
+  w.document.write('<p style="text-align:center;margin-top:20px;font-size:9px;color:#999">Documento generado automáticamente el '+hoy+' - Reserva N° '+reserva.id+' - Carácter de declaración jurada.</p>');
   w.document.write('</body></html>');
   w.document.close();
   setTimeout(function(){w.print()},400);
