@@ -275,6 +275,7 @@ input,select,textarea{font-family:inherit}
       <h4><i class="fa-solid fa-circle-info"></i> Información importante</h4>
       <p><i class="fa-solid fa-phone"></i> Todas las reservas serán confirmadas por la empresa vía contacto telefónico.</p>
       <p><i class="fa-solid fa-envelope"></i> Es obligatorio completar teléfono y email de manera fidedigna.</p>
+      <p><i class="fa-solid fa-shopping-bag"></i> Las compras de productos serán entregadas una vez confirmado el pago. Recibirás un N° de ID de compra.</p>
       <p><i class="fa-solid fa-at"></i> Contacto: <strong>infocarhuerent@gmail.com</strong></p>
     </div>
   </section>
@@ -518,6 +519,7 @@ function callBackend(fn,args,onOk,onErr){
       case 'getExcursiones':runner.getExcursiones();break;
       case 'getProductosUtiles':runner.getProductosUtiles();break;
       case 'getReservasAdmin':runner.getReservasAdmin();break;
+      case 'getComprasAdmin':runner.getComprasAdmin();break;
       case 'getResenas':runner.getResenas();break;
       case 'getCalendarioExcursiones':runner.getCalendarioExcursiones(args[0],args[1]);break;
       case 'getReservas':runner.getReservas(args[0],args[1]);break;
@@ -809,6 +811,7 @@ function loadAdminReservas(){
   callBackend('getReservasAdmin',[],function(r){
     if(!r.success){document.getElementById('adminContent').innerHTML='<p>Error cargando reservas</p>';return}
     var reservas=r.reservas||[];
+    adminReservasCache=reservas;
     var pend=reservas.filter(function(r){return r.estado==='pendiente'}).length;
     var conf=reservas.filter(function(r){return r.estado==='confirmada'}).length;
     var html='<div class="admin-stats-grid"><div class="admin-stat"><h4>Pendientes</h4><div class="num" style="color:var(--warning)">'+pend+'</div></div><div class="admin-stat"><h4>Confirmadas</h4><div class="num" style="color:var(--success)">'+conf+'</div></div><div class="admin-stat"><h4>Total</h4><div class="num">'+reservas.length+'</div></div></div>';
@@ -818,7 +821,9 @@ function loadAdminReservas(){
       var estadoClass='estado-'+r.estado;
       var actions='';
       if(r.estado==='pendiente')actions='<button class="btn btn-success btn-sm" onclick="adminConfirmar(\''+r.id+'\',\''+r.tipo+'\')"><i class="fa-solid fa-check"></i></button> <button class="btn btn-danger btn-sm" onclick="adminCancelar(\''+r.id+'\')"><i class="fa-solid fa-xmark"></i></button>';
-      else if(r.estado==='confirmada'&&r.tipo==='alquiler')actions='<button class="btn btn-secondary btn-sm" onclick="adminDevolver(\''+r.id+'\')"><i class="fa-solid fa-rotate-left"></i> Devolver</button>';
+      else if(r.estado==='confirmada'&&r.tipo==='alquiler')actions='<button class="btn btn-secondary btn-sm" onclick="adminDevolver(\''+r.id+'\')"><i class="fa-solid fa-rotate-left"></i> Devolver</button> <button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="reprintTicket(\''+r.id+'\')"><i class="fa-solid fa-print"></i></button>';
+      else if(r.estado==='confirmada')actions='<button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="reprintTicket(\''+r.id+'\')"><i class="fa-solid fa-print"></i></button>';
+      if(r.estado==='devuelta')actions='<button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="reprintTicket(\''+r.id+'\')"><i class="fa-solid fa-print"></i></button>';
       html+='<tr><td><strong>'+r.id+'</strong></td><td>'+r.cliente+'</td><td>'+r.telefono+'</td><td>'+r.tipo+'</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+prods+'</td><td>$'+fmt(r.total)+'</td><td><span class="estado-badge '+estadoClass+'">'+r.estado+'</span></td><td class="admin-actions">'+actions+'</td></tr>';
     });
     html+='</tbody></table></div>';
@@ -827,14 +832,62 @@ function loadAdminReservas(){
 }
 
 function adminConfirmar(id,tipo){
+  var devFecha=prompt('Fecha de devolución (dd/mm/aaaa):',new Date(Date.now()+86400000).toLocaleDateString('es-AR'));
+  if(devFecha===null)return;
+  var devHora=prompt('Hora de devolución:','18:00');
+  if(devHora===null)return;
   var fn=tipo==='excursion'?'confirmarExcursion':'confirmarReserva';
   callBackend(fn,[id],function(r){
     if(r.success){
       toast('Reserva '+id+' confirmada','success');
       if(r.stockInfo){r.stockInfo.forEach(function(s){toast(s.nombre+': '+s.disponible+' disponibles','success')})}
+      // Guardar info devolución localmente para el ticket
+      var ticketData=findReservaById(id);
+      if(ticketData){
+        ticketData.devolucionFecha=devFecha;
+        ticketData.devolucionHora=devHora;
+        printTicketReserva(ticketData);
+      }
       loadAdminData();loadData();
     }else toast(r.error,'error');
   });
+}
+
+var adminReservasCache=[];
+function findReservaById(id){
+  return adminReservasCache.find(function(x){return x.id===id})||null;
+}
+function reprintTicket(id){
+  var reserva=findReservaById(id);
+  if(reserva){printTicketReserva(reserva)}else{toast('No se encontró la reserva','error')}
+}
+
+function printTicketReserva(reserva){
+  var prods=(reserva.productos||[]).map(function(p){return'<tr><td>'+p.nombre+'</td><td>'+(p.cantidad||1)+'</td></tr>'}).join('');
+  var w=window.open('','_blank','width=400,height=600');
+  w.document.write('<html><head><title>Ticket Reserva</title><style>body{font-family:monospace;padding:20px;font-size:12px;max-width:350px;margin:0 auto}h2{text-align:center;margin:0 0 4px}p{margin:4px 0}.line{border-top:1px dashed #000;margin:10px 0}table{width:100%;border-collapse:collapse}td{padding:4px;border-bottom:1px solid #eee}.center{text-align:center}.bold{font-weight:bold}@media print{body{padding:0}}</style></head><body>');
+  w.document.write('<h2>CARHUÉ RENT</h2><p class="center">Alquiler de Equipos y Excursiones</p><p class="center">infocarhuerent@gmail.com</p><div class="line"></div>');
+  w.document.write('<p class="bold">TICKET DE RESERVA</p>');
+  w.document.write('<p>ID: <strong>'+reserva.id+'</strong></p>');
+  w.document.write('<p>Cliente: '+reserva.cliente+'</p>');
+  w.document.write('<p>Teléfono: '+reserva.telefono+'</p>');
+  w.document.write('<p>Email: '+(reserva.email||'-')+'</p>');
+  w.document.write('<p>Fecha desde: '+reserva.fechaDesde+'</p>');
+  w.document.write('<p>Fecha hasta: '+reserva.fechaHasta+'</p>');
+  w.document.write('<div class="line"></div>');
+  w.document.write('<p class="bold">PRODUCTOS:</p><table>'+prods+'</table>');
+  w.document.write('<div class="line"></div>');
+  w.document.write('<p class="bold" style="font-size:14px">TOTAL: $'+fmt(reserva.total)+'</p>');
+  w.document.write('<div class="line"></div>');
+  if(reserva.devolucionFecha){w.document.write('<p class="bold">DEVOLUCIÓN: '+reserva.devolucionFecha+' a las '+reserva.devolucionHora+'</p>')}
+  w.document.write('<div class="line"></div>');
+  w.document.write('<p class="center" style="margin-top:12px">Guardá este ID para dejar tu reseña:</p>');
+  w.document.write('<p class="center bold" style="font-size:16px">'+reserva.id+'</p>');
+  w.document.write('<div class="line"></div>');
+  w.document.write('<p class="center" style="font-size:10px">Gracias por elegirnos. ¡Disfrutá tu aventura!</p>');
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print()},300);
 }
 function adminCancelar(id){if(!confirm('¿Cancelar reserva '+id+'?'))return;callBackend('cancelarReserva',[id],function(r){if(r.success){toast('Cancelada','success');loadAdminData();loadData()}else toast(r.error,'error')})}
 function adminDevolver(id){
@@ -908,7 +961,60 @@ function adminAddProdUtil(){
 function adminDelProdUtil(id){if(!confirm('¿Eliminar?'))return;callBackend('eliminarProductoUtil',[id],function(r){if(r.success){toast('Eliminado','success');loadData();loadAdminProdUtiles()}else toast(r.error,'error')})}
 
 function loadAdminCompras(){
-  document.getElementById('adminContent').innerHTML='<p style="color:var(--text-light);text-align:center;padding:40px">Las compras de productos útiles aparecerán aquí cuando los clientes compren desde la tienda.</p>';
+  callBackend('getComprasAdmin',[],function(r){
+    if(!r||!r.success||!r.compras||r.compras.length===0){
+      document.getElementById('adminContent').innerHTML='<p style="color:var(--text-light);text-align:center;padding:40px">No hay compras registradas aún.</p>';
+      return;
+    }
+    var compras=r.compras;
+    var html='<div class="overflow-x"><table class="admin-table"><thead><tr><th>ID</th><th>Cliente</th><th>Tel</th><th>Productos</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
+    compras.forEach(function(c){
+      var prods=c.productos.map(function(p){return p.nombre}).join(', ');
+      var actions='';
+      if(c.estado==='pendiente')actions='<button class="btn btn-success btn-sm" onclick="adminConfirmarCompra(\''+c.id+'\',\''+c.cliente+'\','+c.total+')"><i class="fa-solid fa-check"></i> Confirmar Pago</button>';
+      else actions='<button class="btn btn-secondary btn-sm" onclick="printTicketCompra(\''+c.id+'\')" ><i class="fa-solid fa-print"></i></button>';
+      html+='<tr><td><strong>'+c.id+'</strong></td><td>'+c.cliente+'</td><td>'+c.telefono+'</td><td>'+prods+'</td><td>$'+fmt(c.total)+'</td><td><span class="estado-badge estado-'+c.estado+'">'+c.estado+'</span></td><td class="admin-actions">'+actions+'</td></tr>';
+    });
+    html+='</tbody></table></div>';
+    document.getElementById('adminContent').innerHTML=html;
+  },function(){
+    document.getElementById('adminContent').innerHTML='<p style="color:var(--text-light);text-align:center;padding:40px">No hay compras registradas aún.</p>';
+  });
+}
+
+function adminConfirmarCompra(id,cliente,total){
+  var metodo=prompt('Método de pago (efectivo, transferencia, débito, crédito):','efectivo');
+  if(!metodo)return;
+  callBackend('confirmarCompra',[id],function(r){
+    if(r.success){
+      toast('Compra '+id+' confirmada','success');
+      printTicketCompraData({id:id,cliente:cliente,total:total,metodoPago:metodo});
+      loadAdminCompras();
+    }else toast(r.error,'error');
+  });
+}
+
+function printTicketCompra(id){
+  // Re-print desde datos existentes
+  toast('Buscando compra...','');
+}
+
+function printTicketCompraData(data){
+  var w=window.open('','_blank','width=400,height=500');
+  w.document.write('<html><head><title>Ticket Compra</title><style>body{font-family:monospace;padding:20px;font-size:12px;max-width:350px;margin:0 auto}h2{text-align:center;margin:0 0 4px}p{margin:4px 0}.line{border-top:1px dashed #000;margin:10px 0}.center{text-align:center}.bold{font-weight:bold}@media print{body{padding:0}}</style></head><body>');
+  w.document.write('<h2>CARHUÉ RENT</h2><p class="center">Tienda de Productos</p><p class="center">infocarhuerent@gmail.com</p><div class="line"></div>');
+  w.document.write('<p class="bold">TICKET DE COMPRA</p>');
+  w.document.write('<p>ID Compra: <strong>'+data.id+'</strong></p>');
+  w.document.write('<p>Cliente: '+data.cliente+'</p>');
+  w.document.write('<div class="line"></div>');
+  w.document.write('<p class="bold" style="font-size:14px">TOTAL: $'+fmt(data.total)+'</p>');
+  w.document.write('<p>Método de pago: <strong>'+data.metodoPago+'</strong></p>');
+  w.document.write('<div class="line"></div>');
+  w.document.write('<p class="center">PAGO CONFIRMADO</p>');
+  w.document.write('<p class="center" style="font-size:10px">Gracias por tu compra. ¡Disfrutá tu estadía!</p>');
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print()},300);
 }
 
 // =============================================

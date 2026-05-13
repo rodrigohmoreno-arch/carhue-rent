@@ -25,6 +25,7 @@ function doGet(e) {
     case 'getProductosUtiles': result = getProductosUtiles(); break;
     case 'getReservas': result = getReservas(e.parameter.mes, e.parameter.anio); break;
     case 'getReservasAdmin': result = getReservasAdmin(); break;
+    case 'getComprasAdmin': result = getComprasAdmin(); break;
     case 'getResenas': result = getResenas(); break;
     case 'getCalendarioExcursiones': result = getCalendarioExcursiones(e.parameter.mes, e.parameter.anio); break;
     case 'inicializarSistema': result = inicializarSistema(); break;
@@ -460,6 +461,28 @@ function confirmarCompra(id) {
       }
     }
     return JSON.stringify({ success: false, error: 'Compra no encontrada' });
+  } catch(e) { return JSON.stringify({ success: false, error: e.toString() }); }
+}
+
+function getComprasAdmin() {
+  try {
+    var ss = getSpreadsheet();
+    if (!ss) return JSON.stringify({ success: true, compras: [] });
+    var h = ss.getSheetByName('Compras');
+    if (!h) return JSON.stringify({ success: true, compras: [] });
+    var d = h.getDataRange().getValues();
+    var arr = [];
+    for (var i = 1; i < d.length; i++) {
+      if (d[i][0]) {
+        arr.push({
+          id: d[i][0], cliente: d[i][1], telefono: d[i][2], email: d[i][3],
+          productos: JSON.parse(d[i][4] || '[]'),
+          total: d[i][5], estado: d[i][6], fechaCreacion: d[i][7]
+        });
+      }
+    }
+    arr.reverse();
+    return JSON.stringify({ success: true, compras: arr });
   } catch(e) { return JSON.stringify({ success: false, error: e.toString() }); }
 }
 
